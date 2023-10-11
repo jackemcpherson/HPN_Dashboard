@@ -98,21 +98,47 @@ pav_options = [
 
 app.layout = html.Div(
     [
-        dcc.Graph(id="bar-chart", figure=initial_fig),
-        dcc.Dropdown(
-            id="team-slicer",
-            options=team_options,
-            value=[],
-            placeholder="Select Teams",
-            multi=True,
+        # Top section with slicers and graph next to each other
+        html.Div(
+            [
+                # Slicers section
+                html.Div(
+                    [
+                        # Label and Dropdown for Ranking Metric
+                        html.Label("Select Ranking Metric"),
+                        dcc.Dropdown(
+                            id="pav-type-selector",
+                            options=pav_options,
+                            value="Total_PAV",
+                            placeholder="Select PAV Type",
+                            multi=False,
+                        ),
+                        # Label and Dropdown for Teams
+                        html.Label("Select Teams"),
+                        dcc.Dropdown(
+                            id="team-slicer",
+                            options=team_options,
+                            value=[],
+                            placeholder="Select Teams",
+                            multi=True,
+                        ),
+                    ],
+                    style={"width": "30%", "display": "inline-block"},
+                ),
+                # Graph section
+                html.Div(
+                    [
+                        dcc.Graph(id="bar-chart", figure=initial_fig),
+                    ],
+                    style={"width": "70%", "display": "inline-block"},
+                ),
+            ],
+            style={"display": "flex", "flexDirection": "row"},
         ),
-        dcc.Dropdown(
-            id="pav-type-selector",
-            options=pav_options,
-            value="Total_PAV",
-            placeholder="Select PAV Type",
-            multi=False,
-        ),
+        # Placeholder for middle section
+        html.Div([], style={"height": "20px"}),  # You can expand or add content here
+        # Placeholder for bottom section
+        html.Div([]),  # You can expand or add content here
     ]
 )
 
