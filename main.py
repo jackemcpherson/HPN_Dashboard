@@ -39,12 +39,14 @@ def sort_data_by(df: pd.DataFrame, column: str) -> pd.DataFrame:
 
 
 def create_bar_chart(
-    df: pd.DataFrame, pav_type: str, selected_teams: List[str] = None
+    df: pd.DataFrame, pav_type: str, selected_players: List[str] = None
 ) -> go.Figure:
-    if selected_teams:
-        opacity = [0.6 if tm in selected_teams else 0.1 for tm in df["TM"]]
+    if selected_players:
+        opacity = [
+            0.6 if player in selected_players else 0.1 for player in df["Player"]
+        ]
         hovertemplate = [
-            f"{player}<br>{pav_value}<br>{tm}" if tm in selected_teams else None
+            f"{player}<br>{pav_value}<br>{tm}" if player in selected_players else None
             for player, pav_value, tm in zip(df["Player"], df[pav_type], df["TM"])
         ]
     else:
@@ -122,6 +124,19 @@ app.layout = html.Div(
                             placeholder="Select Teams",
                             multi=True,
                         ),
+                        html.Label("Select Players"),
+                        dcc.Dropdown(
+                            id="player-slicer",
+                            options=[
+                                {"label": player, "value": player}
+                                for player in sorted(initial_data["Player"].unique())
+                            ],
+                            value=sorted(
+                                initial_data["Player"].unique()
+                            ),  # default all players are selected
+                            placeholder="Select Players",
+                            multi=True,
+                        ),
                     ],
                     style={"width": "30%", "display": "inline-block"},
                 ),
@@ -145,12 +160,33 @@ app.layout = html.Div(
 
 @app.callback(
     Output("bar-chart", "figure"),
-    [Input("team-slicer", "value"), Input("pav-type-selector", "value")],
+    [
+        Input("team-slicer", "value"),
+        Input("pav-type-selector", "value"),
+        Input("player-slicer", "value"),
+    ],
 )
-def update_bar_chart(selected_teams: List[str], selected_pav_type: str) -> go.Figure:
+def update_bar_chart(
+    selected_teams: List[str], selected_pav_type: str, selected_players: List[str]
+) -> go.Figure:
     data = load_data_from_db()
     sorted_data = sort_data_by(data, selected_pav_type)
-    return create_bar_chart(sorted_data, selected_pav_type, selected_teams)
+    return create_bar_chart(sorted_data, selected_pav_type, selected_players)
+
+
+@app.callback(
+    Output("player-slicer", "value"),  # Now we're updating the value of player dropdown
+    [Input("team-slicer", "value")],
+)
+def update_player_selection(selected_teams: List[str]):
+    data = load_data_from_db()
+    if selected_teams:
+        data = data[data["TM"].isin(selected_teams)]
+        return sorted(
+            data["Player"].unique()
+        )  # Select only the players from the chosen teams
+    else:
+        return sorted(data["Player"].unique())  # By default, select all players
 
 
 if __name__ == "__main__":
