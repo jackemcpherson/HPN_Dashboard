@@ -1,5 +1,6 @@
 import sqlite3
 from typing import List, Tuple
+
 import pandas as pd
 
 csv_file_path = "scripts/2023 – HPN.csv"
@@ -8,12 +9,14 @@ df = pd.read_csv(csv_file_path)
 
 print(df.head(), df.dtypes)
 
+
 def create_table(conn: sqlite3.Connection) -> None:
     """
     Create a table in the SQLite database to store AFL player ratings.
     """
     cursor = conn.cursor()
-    cursor.execute('''
+    cursor.execute(
+        """
     CREATE TABLE IF NOT EXISTS PlayerRatings2023 (
         Player TEXT,
         TM TEXT,
@@ -27,23 +30,29 @@ def create_table(conn: sqlite3.Connection) -> None:
         Mid_mPAV REAL,
         Total_mPAV REAL
     );
-    ''')
+    """
+    )
     conn.commit()
+
 
 def insert_data(conn: sqlite3.Connection, data: List[Tuple]) -> None:
     """
     Insert the player ratings data into the SQLite database.
     """
     cursor = conn.cursor()
-    cursor.executemany('''
+    cursor.executemany(
+        """
     INSERT INTO PlayerRatings2023 (
         Player, TM, GM, Off_PAV, Def_PAV, Mid_PAV, Total_PAV, Off_mPAV, Def_mPAV, Mid_mPAV, Total_mPAV
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    ''', data)
+    """,
+        data,
+    )
     conn.commit()
 
+
 # Connect to the SQLite database (it will be created if it doesn't exist)
-db_path = 'HPN_Data.db'
+db_path = "HPN_Data.db"
 conn = sqlite3.connect(db_path)
 
 # Create the table

@@ -1,8 +1,8 @@
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import dash
-from dash import dcc, html, Input, Output
 import pandas as pd
+import plotly.graph_objects as go
+from dash import Input, Output, dcc, html
+from plotly.subplots import make_subplots
 
 # Load and sort the DataFrame by 'Total PAV' in descending order
 df = pd.read_csv("scripts/2023 – HPN.csv")
