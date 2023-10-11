@@ -35,6 +35,9 @@ def load_data_from_db() -> pd.DataFrame:
         return pd.read_sql_query("SELECT * FROM PlayerRatings2023", conn)
 
 
+data = load_data_from_db()
+
+
 def sort_data_by(df: pd.DataFrame, column: str) -> pd.DataFrame:
     return df.sort_values(by=column, ascending=True)
 
@@ -79,35 +82,40 @@ def create_bar_chart(
     return fig
 
 
+def build_team_options() -> List[dict]:
+    return sorted(
+        [{"label": TEAM_LOOKUP[team], "value": team} for team in data["TM"].unique()],
+        key=lambda x: x["label"],
+    )
+
+
+def build_pav_options() -> List[dict]:
+    return [
+        {"label": "Total PAV", "value": "Total_PAV"},
+        {"label": "Defensive PAV", "value": "Def_PAV"},
+        {"label": "Offensive PAV", "value": "Off_PAV"},
+        {"label": "Midfield PAV", "value": "Mid_PAV"},
+    ]
+
+
+def build_player_options() -> List[dict]:
+    return [
+        {"label": player, "value": player} for player in sorted(data["Player"].unique())
+    ]
+
+
+team_options = build_team_options()
+pav_options = build_pav_options()
+initial_fig = create_bar_chart(sort_data_by(data, "Total_PAV"), "Total_PAV")
+
 app = dash.Dash(__name__)
-
-initial_data = load_data_from_db()
-sorted_by_total_pav = sort_data_by(initial_data, "Total_PAV")
-initial_fig = create_bar_chart(sorted_by_total_pav, "Total_PAV")
-
-team_options = sorted(
-    [
-        {"label": TEAM_LOOKUP[team], "value": team}
-        for team in initial_data["TM"].unique()
-    ],
-    key=lambda x: x["label"],
-)
-pav_options = [
-    {"label": "Total PAV", "value": "Total_PAV"},
-    {"label": "Defensive PAV", "value": "Def_PAV"},
-    {"label": "Offensive PAV", "value": "Off_PAV"},
-    {"label": "Midfield PAV", "value": "Mid_PAV"},
-]
 
 app.layout = html.Div(
     [
-        # Top section with slicers and graph next to each other
         html.Div(
             [
-                # Slicers section
                 html.Div(
                     [
-                        # Label and Dropdown for Ranking Metric
                         html.Label("Select Ranking Metric"),
                         dcc.Dropdown(
                             id="pav-type-selector",
@@ -116,7 +124,6 @@ app.layout = html.Div(
                             placeholder="Select PAV Type",
                             multi=False,
                         ),
-                        # Label and Dropdown for Teams
                         html.Label("Select Teams"),
                         dcc.Dropdown(
                             id="team-slicer",
@@ -128,18 +135,14 @@ app.layout = html.Div(
                         html.Label("Select Players"),
                         dcc.Dropdown(
                             id="player-slicer",
-                            options=[
-                                {"label": player, "value": player}
-                                for player in sorted(initial_data["Player"].unique())
-                            ],
-                            value=[],  # default no players are selected
+                            options=build_player_options(),
+                            value=[],
                             placeholder="Select Players",
                             multi=True,
                         ),
                     ],
                     style={"width": "30%", "display": "inline-block"},
                 ),
-                # Graph section
                 html.Div(
                     [
                         dcc.Graph(id="bar-chart", figure=initial_fig),
@@ -149,10 +152,8 @@ app.layout = html.Div(
             ],
             style={"display": "flex", "flexDirection": "row"},
         ),
-        # Placeholder for middle section
-        html.Div([], style={"height": "20px"}),  # You can expand or add content here
-        # Placeholder for bottom section
-        html.Div([]),  # You can expand or add content here
+        html.Div([], style={"height": "20px"}),
+        html.Div([]),
     ]
 )
 
@@ -168,24 +169,20 @@ app.layout = html.Div(
 def update_bar_chart(
     selected_teams: List[str], selected_pav_type: str, selected_players: List[str]
 ) -> go.Figure:
-    data = load_data_from_db()
     sorted_data = sort_data_by(data, selected_pav_type)
     return create_bar_chart(sorted_data, selected_pav_type, selected_players)
 
 
 @app.callback(
-    Output("player-slicer", "value"),  # Now we're updating the value of player dropdown
+    Output("player-slicer", "value"),
     [Input("team-slicer", "value")],
 )
 def update_player_selection(selected_teams: List[str]):
-    data = load_data_from_db()
     if selected_teams:
-        data = data[data["TM"].isin(selected_teams)]
-        return sorted(
-            data["Player"].unique()
-        )  # Select only the players from the chosen teams
+        filtered_data = data[data["TM"].isin(selected_teams)]
+        return sorted(filtered_data["Player"].unique())
     else:
-        return []  # By default, select no players
+        return []
 
 
 if __name__ == "__main__":
