@@ -1,9 +1,31 @@
 import dash
 import sqlite3
+from typing import List
 import pandas as pd
 import plotly.graph_objects as go
 from dash import Input, Output, dcc, html
 from plotly.subplots import make_subplots
+
+TEAM_LOOKUP = {
+    "AD": "Adelaide Crows",
+    "BL": "Brisbane Lions",
+    "CA": "Carlton Blues",
+    "CW": "Collingwood Magpies",
+    "ES": "Essendon Bombers",
+    "FR": "Fremantle Dockers",
+    "GE": "Geelong Cats",
+    "GC": "Gold Coast Suns",
+    "GW": "Greater Western Sydney Giants",
+    "HW": "Hawthorn Hawks",
+    "ME": "Melbourne Demons",
+    "NM": "North Melbourne Kangaroos",
+    "PA": "Port Adelaide Power",
+    "RI": "Richmond Tigers",
+    "SK": "St Kilda Saints",
+    "SY": "Sydney Swans",
+    "WB": "Western Bulldogs",
+    "WC": "West Coast Eagles",
+}
 
 
 # Load and sort the DataFrame by 'Total PAV' in descending order
@@ -37,33 +59,34 @@ app.layout = html.Div(
         dcc.Graph(id="bar-chart", figure=fig),
         dcc.Dropdown(
             id="team-slicer",
-            options=[
-                {"label": team, "value": team} for team in df_sorted["TM"].unique()
-            ],
-            value=None,
-            placeholder="Select a Team",
-            multi=False,
+            options=sorted(
+                [
+                    {"label": TEAM_LOOKUP[team], "value": team}
+                    for team in df_sorted["TM"].unique()
+                ],
+                key=lambda x: x["label"],
+            ),
+            value=[],
+            placeholder="Select Teams",
+            multi=True,
         ),
     ]
 )
 
 
 @app.callback(Output("bar-chart", "figure"), [Input("team-slicer", "value")])
-def update_bar_chart(selected_team: str) -> go.Figure:
-    if selected_team:
-        opacity = [0.6 if tm == selected_team else 0.1 for tm in df_sorted["TM"]]
+def update_bar_chart(selected_teams: List[str]) -> go.Figure:
+    if selected_teams:
+        opacity = [0.6 if tm in selected_teams else 0.1 for tm in df_sorted["TM"]]
         hovertemplate = [
-            f"{player}<br>{total_pav}" if tm == selected_team else "<extra></extra>"
+            f"{player}<br>{total_pav}" if tm in selected_teams else None
             for player, total_pav, tm in zip(
                 df_sorted["Player"], df_sorted["Total_PAV"], df_sorted["TM"]
             )
         ]
     else:
-        opacity = [1] * len(df_sorted)
-        hovertemplate = [
-            f"{player}<br>{total_pav}"
-            for player, total_pav in zip(df_sorted["Player"], df_sorted["Total_PAV"])
-        ]
+        opacity = [0.1] * len(df_sorted)
+        hovertemplate = [None] * len(df_sorted)
 
     updated_trace = go.Bar(
         x=df_sorted["Player"],
