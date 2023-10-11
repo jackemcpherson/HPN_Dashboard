@@ -131,9 +131,7 @@ app.layout = html.Div(
                                 {"label": player, "value": player}
                                 for player in sorted(initial_data["Player"].unique())
                             ],
-                            value=sorted(
-                                initial_data["Player"].unique()
-                            ),  # default all players are selected
+                            value=[],  # default no players are selected
                             placeholder="Select Players",
                             multi=True,
                         ),
@@ -186,7 +184,7 @@ def update_player_selection(selected_teams: List[str]):
             data["Player"].unique()
         )  # Select only the players from the chosen teams
     else:
-        return sorted(data["Player"].unique())  # By default, select all players
+        return []  # By default, select no players
 
 
 if __name__ == "__main__":
