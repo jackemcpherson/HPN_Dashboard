@@ -1,6 +1,7 @@
-import dash
 import sqlite3
 from typing import List
+
+import dash
 import pandas as pd
 import plotly.graph_objects as go
 from dash import Input, Output, dcc, html
@@ -70,27 +71,56 @@ app.layout = html.Div(
             placeholder="Select Teams",
             multi=True,
         ),
+        dcc.Dropdown(
+            id="pav-type-selector",
+            options=[
+                {"label": "Total PAV", "value": "Total_PAV"},
+                {"label": "Defensive PAV", "value": "Def_PAV"},
+                {"label": "Offensive PAV", "value": "Off_PAV"},
+                {"label": "Midfield PAV", "value": "Mid_PAV"},
+            ],
+            value="Total_PAV",
+            placeholder="Select PAV Type",
+            multi=False,
+        ),
     ]
 )
 
 
-@app.callback(Output("bar-chart", "figure"), [Input("team-slicer", "value")])
-def update_bar_chart(selected_teams: List[str]) -> go.Figure:
+@app.callback(
+    Output("bar-chart", "figure"),
+    [Input("team-slicer", "value"), Input("pav-type-selector", "value")],
+)
+def update_bar_chart(selected_teams: List[str], selected_pav_type: str) -> go.Figure:
+    # Sorting dataframe based on the selected PAV type
+    df_sorted_by_pav_type = df_sorted.sort_values(by=selected_pav_type, ascending=True)
+
     if selected_teams:
-        opacity = [0.6 if tm in selected_teams else 0.1 for tm in df_sorted["TM"]]
+        opacity = [
+            0.6 if tm in selected_teams else 0.1 for tm in df_sorted_by_pav_type["TM"]
+        ]
         hovertemplate = [
-            f"{player}<br>{total_pav}" if tm in selected_teams else None
-            for player, total_pav, tm in zip(
-                df_sorted["Player"], df_sorted["Total_PAV"], df_sorted["TM"]
+            f"{player}<br>{pav_value}<br>{tm}" if tm in selected_teams else None
+            for player, pav_value, tm in zip(
+                df_sorted_by_pav_type["Player"],
+                df_sorted_by_pav_type[selected_pav_type],
+                df_sorted_by_pav_type["TM"],
             )
         ]
     else:
-        opacity = [0.1] * len(df_sorted)
-        hovertemplate = [None] * len(df_sorted)
+        opacity = [0.6] * len(df_sorted_by_pav_type)
+        hovertemplate = [
+            f"{player}<br>{pav_value}<br>{tm}"
+            for player, pav_value, tm in zip(
+                df_sorted_by_pav_type["Player"],
+                df_sorted_by_pav_type[selected_pav_type],
+                df_sorted_by_pav_type["TM"],
+            )
+        ]
 
     updated_trace = go.Bar(
-        x=df_sorted["Player"],
-        y=df_sorted["Total_PAV"],
+        x=df_sorted_by_pav_type["Player"],
+        y=df_sorted_by_pav_type[selected_pav_type],
         name="",
         marker=dict(opacity=opacity),
         hovertemplate=hovertemplate,
@@ -101,10 +131,10 @@ def update_bar_chart(selected_teams: List[str]) -> go.Figure:
     updated_fig = make_subplots(rows=1, cols=1)
     updated_fig.add_trace(updated_trace)
     updated_fig.update_layout(
-        title="AFL Player Ratings 2023: Total PAV",
+        title=f"AFL Player Ratings 2023: {selected_pav_type.replace('_', ' ')}",
         xaxis_title="Player",
         xaxis=dict(showticklabels=False),
-        yaxis_title="Total PAV",
+        yaxis_title=selected_pav_type.replace("_", " "),
     )
 
     return updated_fig
