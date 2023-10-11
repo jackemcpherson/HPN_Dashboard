@@ -7,6 +7,12 @@ csv_file_path = "scripts/2023 – HPN.csv"
 
 df = pd.read_csv(csv_file_path)
 
+# Identify duplicate names and modify them
+duplicated_names = df[df["Player"].duplicated(keep=False)]["Player"].unique()
+for name in duplicated_names:
+    mask = df["Player"] == name
+    df.loc[mask, "Player"] = df.loc[mask, "Player"] + " (" + df.loc[mask, "TM"] + ")"
+
 print(df.head(), df.dtypes)
 
 
