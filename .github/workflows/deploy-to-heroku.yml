@@ -37,4 +37,4 @@ jobs:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: "hpn-dashboard"
           heroku_email: "jackemcpherson@gmail.com"
-          healthcheck: "https://hpn-dashboard.herokuapp.com/"
+          healthcheck: "https://hpn-dashboard-179c54960eb5.herokuapp.com/"
